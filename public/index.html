@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bot Access Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      font-family: 'Courier New', monospace;
+      background: linear-gradient(135deg, #0f0f0f, #1a1a1a);
+    }
+
+    .glass {
+      backdrop-filter: blur(12px);
+      background-color: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .fade-in {
+      animation: fadeIn 0.6s ease-out both;
+    }
+
+    @keyframes fadeIn {
+      0% {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      100% {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+  </style>
+</head>
+<body class="min-h-screen flex items-center justify-center px-4 py-10 text-white">
+  <div class="w-full max-w-5xl fade-in">
+    <h1 class="text-4xl text-center mb-8 font-bold tracking-wide text-cyan-400">Bot Access Dashboard</h1>
+    <div class="overflow-x-auto rounded-lg glass p-4 shadow-lg">
+      <table class="w-full text-sm text-left">
+        <thead class="uppercase text-cyan-300 border-b border-cyan-800">
+          <tr>
+            <th class="py-3 px-4">User ID</th>
+            <th class="py-3 px-4">Expiration</th>
+            <th class="py-3 px-4">Status</th>
+            <th class="py-3 px-4">Action</th>
+          </tr>
+        </thead>
+        <tbody id="userTableBody">
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    async function fetchUsers() {
+      const res = await fetch('/api/users');
+      const users = await res.json();
+      const tbody = document.querySelector("#userTableBody");
+      tbody.innerHTML = "";
+
+      users.forEach(user => {
+        const expired = Date.now() > user.expiration_date;
+        const expireDate = new Date(user.expiration_date).toLocaleString();
+        const statusClass = expired ? 'text-red-400' : 'text-green-400';
+
+        const row = document.createElement("tr");
+        row.className = "border-b border-cyan-800 hover:bg-white/5 transition";
+        row.innerHTML = `
+          <td class="py-3 px-4">${user.user_id}</td>
+          <td class="py-3 px-4">${expireDate}</td>
+          <td class="py-3 px-4 ${statusClass}">${expired ? 'Expired' : 'Active'}</td>
+          <td class="py-3 px-4">
+            <button onclick="deleteUser('${user.user_id}')" class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded transition">Delete</button>
+          </td>
+        `;
+        tbody.appendChild(row);
+      });
+    }
+
+    async function deleteUser(userId) {
+      const ok = confirm("Delete this user?");
+      if (!ok) return;
+
+      const res = await fetch('/api/delete-access', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: userId })
+      });
+
+      const result = await res.json();
+      if (result.success) {
+        alert("User deleted.");
+        fetchUsers();
+      } else {
+        alert("Failed: " + result.message);
+      }
+    }
+
+    fetchUsers();
+  </script>
+</body>
+</html>
