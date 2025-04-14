@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const path = require('path');
 const TelegramBot = require('node-telegram-bot-api');
@@ -9,11 +10,13 @@ const app = express();
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-const botToken = '7585046746:AAGkXE0hIxz6eIXYz7136EhW6MFk9e3NHmY';
-const bot = new TelegramBot(botToken, { polling: true });
+// ENV variables
+const botToken = process.env.BOT_TOKEN;
+const mongoUri = process.env.MONGO_URI;
+const adminChatIds = process.env.ADMIN_CHAT_IDS.split(',');
 
+const bot = new TelegramBot(botToken, { polling: true });
 const file = JSON.parse(fs.readFileSync("eytokens.json", "utf-8"));
-const ADMIN_CHAT_IDS = ['7810011711'];
 
 const headers = {
   'User-Agent': 'Mozilla/5.0',
@@ -24,13 +27,11 @@ const headers = {
 };
 
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
+const numberspamed = {};
 
-const uri = "mongodb+srv://toshidev0:zcode22107@dbtxt.3dxoaud.mongodb.net/?retryWrites=true&w=majority&appName=DBTXT";
-const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
+const client = new MongoClient(mongoUri, { useNewUrlParser: true, useUnifiedTopology: true });
 const dbName = 'SMSBOTUSERS';
 const usersCollection = 'DBUSERS';
-
-const numberspamed = {};
 
 async function connectDB() {
   await client.connect();
@@ -72,12 +73,13 @@ async function checkExpiredUsers() {
 }
 setInterval(checkExpiredUsers, 60 * 1000);
 
+// --- Telegram Commands ---
 bot.onText(/\/start/, async msg => {
   const userId = msg.from.id;
   const username = msg.from.username || "NoUsername";
+
   await bot.sendPhoto(userId, 'https://i.ibb.co/XbQdHdL/KOREKONG.png', {
-    caption: `👋 𝗛𝗘𝗬 𝗧𝗛𝗘𝗥𝗘 @${username}, 𝗪𝗘𝗟𝗖𝗢𝗠𝗘 𝗧𝗢 𝗧𝗛𝗘 𝗧𝗢𝗦𝗛𝗜 𝗦𝗠𝗦 𝗕𝗢𝗠𝗕 𝗕𝗢𝗧! \n\n💣 𝗬𝗢𝗨’𝗥𝗘 𝗔𝗕𝗢𝗨𝗧 𝗧𝗢 𝗧𝗔𝗣 𝗜𝗡𝗧𝗢 𝗦𝗢𝗠𝗘𝗧𝗛𝗜𝗡𝗚 𝗣𝗢𝗪𝗘𝗥𝗙𝗨𝗟.  \n\n𝗧𝗛𝗜𝗦 𝗕𝗢𝗧 𝗖𝗔𝗡 𝗦𝗘𝗡𝗗 𝗠𝗔𝗦𝗦𝗜𝗩𝗘 𝗦𝗠𝗦 𝗪𝗔𝗩𝗘𝗦 𝗜𝗡 𝗦𝗘𝗖𝗢𝗡𝗗𝗦\n\n — 𝗕𝗨𝗧 𝗥𝗘𝗠𝗘𝗠𝗕𝗘𝗥, 𝗪𝗜𝗧𝗛 𝗚𝗥𝗘𝗔𝗧 𝗣𝗢𝗪𝗘𝗥 𝗖𝗢𝗠𝗘𝗦... 𝗪𝗘𝗟𝗟, 𝗬𝗢𝗨 𝗞𝗡𝗢𝗪 𝗧𝗛𝗘 𝗥𝗘𝗦𝗧. 😎 \n\n 👤 𝗜𝗙 𝗬𝗢𝗨’𝗥𝗘 𝗡𝗘𝗪 𝗛𝗘𝗥𝗘, \n\n\n𝗨𝗦𝗘 /𝗿𝗲𝗾𝘂𝗲𝘀𝘁 𝗧𝗢 𝗔𝗣𝗣𝗟𝗬 𝗙𝗢𝗥 𝗔𝗖𝗖𝗘𝗦𝗦.\n\n🛡️ 𝗪𝗘 𝗗𝗢𝗡’𝗧 𝗟𝗘𝗧 𝗝𝗨𝗦𝗧 𝗔𝗡𝗬𝗢𝗡𝗘 𝗜𝗡\n\n — 𝗣𝗥𝗢𝗩𝗘 𝗬𝗢𝗨’𝗥𝗘 𝗪𝗢𝗥𝗧𝗛𝗬.  \n\n𝗥𝗘𝗔𝗗𝗬 𝗧𝗢 𝗚𝗘𝗧 𝗦𝗧𝗔𝗥𝗧𝗘𝗗? 𝗟𝗘𝗧’𝗦 𝗥𝗢𝗟𝗟. 🚀
-`
+    caption: `👋 𝗛𝗘𝗬 𝗧𝗛𝗘𝗥𝗘 @${username}, 𝗪𝗘𝗟𝗖𝗢𝗠𝗘 𝗧𝗢 𝗧𝗛𝗘 𝗧𝗢𝗦𝗛𝗜 𝗦𝗠𝗦 𝗕𝗢𝗠𝗕 𝗕𝗢𝗧! \n\n💣 𝗬𝗢𝗨’𝗥𝗘 𝗔𝗕𝗢𝗨𝗧 𝗧𝗢 𝗧𝗔𝗣 𝗜𝗡𝗧𝗢 𝗦𝗢𝗠𝗘𝗧𝗛𝗜𝗡𝗚 𝗣𝗢𝗪𝗘𝗥𝗙𝗨𝗟.  \n\n𝗧𝗛𝗜𝗦 𝗕𝗢𝗧 𝗖𝗔𝗡 𝗦𝗘𝗡𝗗 𝗠𝗔𝗦𝗦𝗜𝗩𝗘 𝗦𝗠𝗦 𝗪𝗔𝗩𝗘𝗦 𝗜𝗡 𝗦𝗘𝗖𝗢𝗡𝗗𝗦\n\n — 𝗕𝗨𝗧 𝗥𝗘𝗠𝗘𝗠𝗕𝗘𝗥, 𝗪𝗜𝗧𝗛 𝗚𝗥𝗘𝗔𝗧 𝗣𝗢𝗪𝗘𝗥 𝗖𝗢𝗠𝗘𝗦... 𝗪𝗘𝗟𝗟, 𝗬𝗢𝗨 𝗞𝗡𝗢𝗪 𝗧𝗛𝗘 𝗥𝗘𝗦𝗧. 😎 \n\n 👤 𝗜𝗙 𝗬𝗢𝗨’𝗥𝗘 𝗡𝗘𝗪 𝗛𝗘𝗥𝗘, \n\n\n𝗨𝗦𝗘 /𝗿𝗲𝗾𝘂𝗲𝘀𝘁 𝗧𝗢 𝗔𝗣𝗣𝗟𝗬 𝗙𝗢𝗥 𝗔𝗖𝗖𝗘𝗦𝗦.\n\n🛡️ 𝗪𝗘 𝗗𝗢𝗡’𝗧 𝗟𝗘𝗧 𝗝𝗨𝗦𝗧 𝗔𝗡𝗬𝗢𝗡𝗘 𝗜𝗡\n\n — 𝗣𝗥𝗢𝗩𝗘 𝗬𝗢𝗨’𝗥𝗘 𝗪𝗢𝗥𝗧𝗛𝗬.  \n\n𝗥𝗘𝗔𝗗𝗬 𝗧𝗢 𝗚𝗘𝗧 𝗦𝗧𝗔𝗥𝗧𝗘𝗗? 𝗟𝗘𝗧’𝗦 𝗥𝗢𝗟𝗟. 🚀`
   });
 });
 
@@ -96,7 +98,7 @@ bot.onText(/\/request/, async msg => {
     caption: "📨 𝗥𝗘𝗤𝗨𝗘𝗦𝗧 𝗛𝗔𝗦 𝗕𝗘𝗘𝗡 𝗦𝗘𝗡𝗗𝗘𝗗 𝗧𝗢 𝗧𝗛𝗘 𝗔𝗗𝗠𝗜𝗡, 𝗣𝗟𝗘𝗔𝗦𝗘 𝗪𝗔𝗜𝗧 𝗙𝗢𝗥 𝗧𝗛𝗘 𝗔𝗣𝗣𝗥𝗢𝗩𝗔𝗟"
   });
 
-  for (const adminId of ADMIN_CHAT_IDS) {
+  for (const adminId of adminChatIds) {
     await bot.sendMessage(adminId, `📥 *𝗡𝗘𝗪 𝗨𝗦𝗘𝗥 𝗔𝗖𝗖𝗘𝗦𝗦*\n\n👤 @${username}\n🆔 ID: ${userId}`, {
       parse_mode: 'Markdown',
       reply_markup: {
@@ -124,7 +126,7 @@ bot.on('callback_query', async query => {
       const [days, hours, minutes] = response.text.split(" ").map(Number);
       const expirationDate = Date.now() + ((days * 24 + hours) * 60 + minutes) * 60 * 1000;
       await approveUser(userId, expirationDate);
-      bot.sendMessage(userId, `🎉 𝗔𝗖𝗖𝗘𝗦𝗦 𝗔𝗣𝗥𝗢𝗩𝗘 𝗙𝗢𝗥 ${days}d ${hours}h ${minutes}m. Use /bomb`);
+      bot.sendMessage(userId, `🎉 𝗔𝗖𝗖𝗘𝗦𝗦 𝗔𝗣𝗣𝗥𝗢𝗩𝗘 𝗙𝗢𝗥 ${days}d ${hours}h ${minutes}m. Use /bomb`);
       bot.sendMessage(query.from.id, `✅ Access set for ${userIdStr}`);
       bot.editMessageReplyMarkup({ inline_keyboard: [] }, {
         chat_id: message.chat.id,
@@ -188,7 +190,7 @@ app.post('/api/delete-access', async (req, res) => {
   await collection.deleteOne({ user_id: parseInt(user_id) });
 
   try {
-    await bot.sendMessage(parseInt(user_id), "🚫 𝗬𝗢𝗨𝗥 𝗔𝗖𝗖𝗘𝗦𝗦 𝗛𝗔𝗦 𝗕𝗘𝗘𝗡 𝗥𝗘𝗩𝗢𝗞𝗘𝗗 𝗕𝗬 𝗗𝗘𝗩𝗘𝗟𝗢𝗣𝗘𝗥 .");
+    await bot.sendMessage(parseInt(user_id), "🚫 𝗬𝗢𝗨𝗥 𝗔𝗖𝗖𝗘𝗦𝗦 𝗛𝗔𝗦 𝗕𝗘𝗘𝗡 𝗥𝗘𝗩𝗢𝗞𝗘𝗗 𝗕𝗬 𝗗𝗘𝗩𝗘𝗟𝗢𝗣𝗘𝗥.");
   } catch (e) {
     console.log("Failed to notify user");
   }
@@ -196,4 +198,5 @@ app.post('/api/delete-access', async (req, res) => {
   return res.json({ success: true });
 });
 
-app.listen(3000, () => console.log("Server running on http://localhost:3000"));
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));

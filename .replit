@@ -13,5 +13,9 @@ run = ["sh", "-c", "npm run start"]
 deploymentTarget = "autoscale"
 ignorePorts = false
 
+[[ports]]
+localPort = 3000
+externalPort = 80
+
 
 
